@@ -40,7 +40,7 @@ export default function LoginForm({ onLogin }: { onLogin: () => void }) {
             Welcome Back
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Sign in to User Management System
+            Sign in to User Management System 😍
           </p>
         </div>
 
