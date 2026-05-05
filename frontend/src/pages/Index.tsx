@@ -10,12 +10,17 @@ import AddUserDialog from "@/components/AddUserDialog";
 import UserDetailDialog from "@/components/UserDetailDialog";
 import EmptyState from "@/components/EmptyState";
 import { useDebounce } from "@/hooks/useDebounce";
-import { fetchUsers, deleteUser, User } from "@/lib/api";
+import {
+  AUTH_SESSION_EXPIRED_EVENT,
+  fetchUsers,
+  deleteUser,
+  User,
+} from "@/lib/api";
 import { toast } from "sonner";
 import LoginForm from "@/components/LoginForm";
 import { getToken, removeToken, verifyToken } from "@/lib/auth";
 
-const LIMIT = 6;
+const LIMIT = 3;
 
 export default function Index() {
   const [users, setUsers] = useState<User[]>([]);
@@ -29,6 +34,23 @@ export default function Index() {
   const [authChecking, setAuthChecking] = useState(true);
 
   const debouncedSearch = useDebounce(search, 300);
+
+  useEffect(() => {
+    const onSessionExpired = (e: Event) => {
+      const detail = (e as CustomEvent<{ notify?: boolean }>).detail;
+      const notify = detail?.notify !== false;
+      setIsAuthenticated(false);
+      setAuthChecking(false);
+      setLoading(false);
+      if (notify) {
+        toast.info("Session expired. Please sign in again.");
+      }
+    };
+
+    window.addEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+    return () =>
+      window.removeEventListener(AUTH_SESSION_EXPIRED_EVENT, onSessionExpired);
+  }, []);
 
   // On mount, verify if existing token is still valid
   useEffect(() => {
@@ -55,7 +77,21 @@ export default function Index() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetchUsers(page, LIMIT, debouncedSearch);
+      let currentPage = page;
+      let res = await fetchUsers(currentPage, LIMIT, debouncedSearch);
+      const lastPage = Math.max(1, Math.ceil(res.total / LIMIT));
+
+      // Avoid empty table when page is past the last page (e.g. after deleting users or changing page size).
+      if (res.total > 0 && currentPage > lastPage) {
+        currentPage = lastPage;
+        setPage(lastPage);
+        res = await fetchUsers(currentPage, LIMIT, debouncedSearch);
+      } else if (res.total > 0 && res.data.length === 0 && currentPage > 1) {
+        currentPage = 1;
+        setPage(1);
+        res = await fetchUsers(1, LIMIT, debouncedSearch);
+      }
+
       setUsers(res.data);
       setTotal(res.total);
     } catch {
@@ -140,49 +176,60 @@ export default function Index() {
         </div>
       </header>
 
-      <main className="container max-w-5xl px-4 sm:px-6 py-6 sm:py-8">
-        <div className="mb-8 animate-fade-in">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Users</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your team members and their account permissions.
+      <main className="container max-w-6xl px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="mb-10 animate-fade-in">
+          <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">Users</h2>
+          <p className="mt-2 text-base text-muted-foreground max-w-2xl">
+            Manage your team members, roles, and account permissions in one centralized dashboard.
           </p>
         </div>
 
-        {/* Toolbar */}
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
-          <div className="relative max-w-sm flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        {/* Toolbar: Robust Responsive Layout */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between animate-fade-in">
+          <div className="relative w-full sm:max-w-md group">
+            <Search className="absolute left-3.5 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
             <Input
               placeholder="Search by name or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="pl-11 h-12 bg-card/40 border-border/40 focus:bg-card transition-all rounded-2xl shadow-sm focus:ring-2 focus:ring-primary/20"
             />
           </div>
-          <Button onClick={() => setAddOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Add User
+          <Button 
+            onClick={() => setAddOpen(true)}
+            className="h-12 px-8 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all active:scale-[0.98]"
+          >
+            <Plus className="mr-2 h-5 w-5" /> Add User
           </Button>
         </div>
 
-        {/* Stats */}
-        <div className="mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4 animate-fade-in">
+        {/* Stats Grid: Professional 1-2-3 column layout */}
+        <div className="mb-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 animate-fade-in">
           {[
-            { label: "Total Users", value: total },
-            { label: "Admins", value: users.filter((u) => u.role === "Admin").length },
-            { label: "This Page", value: users.length },
+            { label: "Total Users", value: total, icon: Users, color: "text-blue-500" },
+            { label: "Admins", value: users.filter((u) => u.role === "Admin").length, icon: Users, color: "text-purple-500" },
+            { label: "Active This Page", value: users.length, icon: Users, color: "text-emerald-500" },
           ].map((s) => (
             <div
               key={s.label}
-              className="rounded-2xl border bg-card/80 backdrop-blur-sm p-4 shadow-soft transition-all hover:shadow-card hover:-translate-y-0.5"
+              className="group relative overflow-hidden rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm p-6 shadow-soft transition-all hover:shadow-card hover:-translate-y-1"
             >
-              <p className="text-xs font-medium text-muted-foreground">{s.label}</p>
-              <p className="mt-1 text-2xl font-bold text-foreground">{s.value}</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">{s.label}</p>
+                  <p className="mt-2 text-3xl font-black text-foreground">{s.value}</p>
+                </div>
+                <div className={`p-3 rounded-xl bg-muted/50 ${s.color}`}>
+                  <s.icon className="h-6 w-6" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1 w-0 bg-primary transition-all duration-500 group-hover:w-full" />
             </div>
           ))}
         </div>
 
-        {/* Table or Empty */}
-        {!loading && users.length === 0 ? (
+        {/* Empty only when there are no users for this query (not when current page is out of range). */}
+        {!loading && total === 0 ? (
           <EmptyState search={debouncedSearch} onAdd={() => setAddOpen(true)} />
         ) : (
           <UserTable

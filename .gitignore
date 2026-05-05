@@ -11,6 +11,8 @@ ENV/
 #  Environment variables
 .env
 .env.*
+!.env.example
+!**/.env.example
 
 #  Flask
 instance/
@@ -46,3 +48,16 @@ docker-compose.override.yml
 #  Misc
 *.swp
 *.swo
+
+# Node / JS
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+*.local
+.eslintcache
+.stylelintcache
+.npm
+.cache
+

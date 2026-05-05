@@ -7,19 +7,13 @@ npm install
 npm run dev
 ```
 
+Opens the Vite dev server (default **http://localhost:5173**). Ensure the Flask API is running on **http://localhost:5000**; `/api` requests are proxied there (see `vite.config.ts`).
+
 ## Configuration
 
-Copy `.env.example` to `.env` and set your backend API URL:
+Optional: copy `.env.example` to `.env`. Defaults use **`VITE_API_BASE_URL=/api`** so behaviour matches the Docker Nginx setup.
 
-```
-VITE_API_BASE_URL=http://localhost:3000/api
-```
-
-## Connecting to Your Backend
-
-Edit `src/lib/api.ts` to replace the mock functions with real API calls using `fetch` or `axios`. The `BASE_URL` is already configured from the environment variable.
-
-## Tech Stack
+## Tech stack
 
 - React 18 + TypeScript
 - Vite 5

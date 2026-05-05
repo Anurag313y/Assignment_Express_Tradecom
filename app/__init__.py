@@ -10,7 +10,6 @@ from flask_jwt_extended import JWTManager
 def create_app():
     app = Flask(__name__)
     app.config.from_object("config.Config")
-    app.config["JWT_SECRET_KEY"] = "your-secret-key"  # Change this in production
 
     CORS(app, origins="*", allow_headers=["Content-Type", "Authorization"],
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])

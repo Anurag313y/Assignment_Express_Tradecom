@@ -27,7 +27,7 @@ def get_user_by_email(email):
 
 
 def get_users(search=None, page=None, limit=None):
-    query = User.query
+    query = User.query.order_by(User.id.desc())
 
     if search:
         search_value = f"%{search}%"
@@ -61,10 +61,10 @@ def get_users(search=None, page=None, limit=None):
 
 
 def get_user_by_id(user_id):
-    return User.query.get(user_id)
+    return db.session.get(User, user_id)
 
 def delete_user(user_id):
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
 
     if not user:
         return None, "User not found"

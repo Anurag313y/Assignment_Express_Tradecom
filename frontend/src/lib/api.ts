@@ -1,4 +1,6 @@
-export const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+/** Relative `/api` matches Docker Nginx and local Vite proxy (see vite.config.ts). */
+export const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.trim() || "/api";
 
 export interface User {
   id: number;
@@ -18,6 +20,9 @@ export interface PaginatedResponse<T> {
 
 import { getToken, removeToken } from "./auth";
 
+/** Dispatched when an authenticated API call gets 401 (listener updates UI without full reload). */
+export const AUTH_SESSION_EXPIRED_EVENT = "app:auth-session-expired";
+
 /**
  * Helper: build auth headers. If no token, returns empty object.
  */
@@ -26,13 +31,19 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+function notifySessionExpired(detail: { notify: boolean }) {
+  removeToken();
+  window.dispatchEvent(
+    new CustomEvent(AUTH_SESSION_EXPIRED_EVENT, { detail })
+  );
+}
+
 /**
- * Helper: handle 401 responses globally — clear stale token and redirect.
+ * Handle 401 from protected routes — avoid location.reload() (duplicate requests / noisy console).
  */
-function handleUnauthorized(res: Response) {
+function handleUnauthorized(res: Response, opts?: { notify?: boolean }) {
   if (res.status === 401) {
-    removeToken();
-    window.location.reload();
+    notifySessionExpired({ notify: opts?.notify !== false });
   }
 }
 
