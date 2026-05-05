@@ -1,3 +1,12 @@
+# Demo Video
+
+
+https://github.com/user-attachments/assets/d21787f5-0a3a-4e08-b572-9892b108665c
+
+
+
+
+
 # User Management — Express Tradecom Assignment
 
 Flask REST API (MySQL, JWT) with a React (Vite + TypeScript) frontend. **Recommended:** run everything with Docker Compose so databases, ports, and API URLs match on any machine.
