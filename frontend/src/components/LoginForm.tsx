@@ -65,7 +65,7 @@ export default function LoginForm({ onLogin }: { onLogin: () => void }) {
               <input
                 id="login-email"
                 type="email"
-                placeholder="admin@example.com"
+                placeholder="admin@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full h-11 px-4 rounded-lg border border-border bg-white text-foreground placeholder:text-muted-foreground/60 text-sm outline-none transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -131,10 +131,10 @@ export default function LoginForm({ onLogin }: { onLogin: () => void }) {
               Demo credentials:
             </p>
             <p className="text-xs text-muted-foreground">
-              Email: admin@example.com
+              Email: admin@gmail.com
             </p>
             <p className="text-xs text-muted-foreground">
-              Password: admin123
+              Password: admin@123
             </p>
           </div>
         </div>

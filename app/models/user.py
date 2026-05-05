@@ -1,8 +1,7 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timezone
 
-
-from passlib.hash import bcrypt
+import bcrypt as _bcrypt
 
 class User(db.Model):
     __tablename__ = "users"
@@ -12,14 +11,26 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     role = db.Column(db.String(80), nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    avatar_url = db.Column(db.String(255), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    avatar_url = db.Column(db.Text, nullable=True)
 
     def set_password(self, password):
-        self.password_hash = bcrypt.hash(password)
+        if password is None:
+            raise ValueError("Password is required")
+        pw = password.encode("utf-8")
+        self.password_hash = _bcrypt.hashpw(pw, _bcrypt.gensalt()).decode("utf-8")
 
     def check_password(self, password):
-        return bcrypt.verify(password, self.password_hash)
+        if not password or not self.password_hash:
+            return False
+        try:
+            return _bcrypt.checkpw(
+                password.encode("utf-8"),
+                self.password_hash.encode("utf-8"),
+            )
+        except ValueError:
+            # covers invalid hash formats
+            return False
 
     def to_dict(self):
         return {

@@ -1,4 +1,9 @@
+import { jwtDecode } from "jwt-decode";
 import { BASE_URL, User } from "./api";
+
+type JwtPayload = {
+  exp?: number;
+};
 
 export interface AuthResponse {
   success: boolean;
@@ -64,12 +69,24 @@ export function removeToken() {
 }
 
 /**
- * Check if the stored token is still valid by calling /me.
- * Returns the user if valid, null otherwise (and clears stale token).
+ * Check session: skip network call when JWT is missing, malformed, or already expired
+ * (avoids unnecessary 401 noise in DevTools). Still calls /me when expiry looks valid
+ * so the signature and user record are verified server-side.
  */
 export async function verifyToken(): Promise<User | null> {
   const token = getToken();
   if (!token) return null;
+
+  try {
+    const { exp } = jwtDecode<JwtPayload>(token);
+    if (exp != null && exp * 1000 <= Date.now()) {
+      removeToken();
+      return null;
+    }
+  } catch {
+    removeToken();
+    return null;
+  }
 
   try {
     const res = await fetch(`${BASE_URL}/me`, {
